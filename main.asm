@@ -1,44 +1,106 @@
+section .bss
+
+X: resw 1
+Y: resw 1
+Color: resb 1
+Length: resw 1
+
 section .text
 
-;---initializing graphics mode
-mov ax, 012h
-int 10h
+call setVGA
 
-;---drawing red dot in the left upper corner of the screen
-mov ax, 0A000H		; pointing at video buffer
-mov es, ax		; loading starting address to video memory
-mov bx, 0		; pointing at the first byte of buffer
+mov byte [Color], 0x1
+call showColor
+call waitKey
 
-;---masking all bits except the seventh
-mov dx, 3CEH		; pointing at address register
-mov al, 8		; register number
-out dx, al		; sending address
-inc dx			; pointing at data register
-mov al, 10000000B	; mask
-out dx, al		; sending the data
+mov byte [Color], 0xD
+mov word [X], 0d100
+mov word [Y], 0d160
+call drawPixel
+call waitKey
 
-;---clearing current contents of the TODO ?
-mov al, [es:bx]		; reading contents of the TODO ?
-mov al, 0		; preparing for the purge
-mov [es:bx], al		; purging!
+mov word [X], 0d10
+mov word [Y], 0d20
+mov word [Length], 0d30
+mov byte [Color], 0x4
+call drawHorizontalLine
+call waitKey
 
-;---setting up the mask map register for the red color
-mov dx, 3C4H		; pointing at address register
-mov al, 2		; mask map register number
-out dx, al		; sending address
-inc dx			; pointing at data register
-mov al, 4		; color code
-out dx, al		; sending the data
+mov word [X], 0d10
+mov word [Y], 0d20
+mov word [Length], 0d30
+mov byte [Color], 0x4
+call drawVerticalLine
+call waitKey
 
-;---drawing the dot
-mov al, 0FFH		; any value with set seventh bit
-mov [es:bx], al		; showing the dot
+call setText
+call exit
 
-;---waiting for key pressing
-xor ax, ax
-int 16h
+waitKey:
+	xor ax, ax
+	int 0x16
+	ret
 
-;---returning to the previous mode
-mov ax, 4c00h
-int 21h
+exit:
+	mov ax, 0x4c00
+	int 0x21
 
+setText:
+	mov ax,0x3
+	int 0x10
+	ret
+
+showColor:
+	mov ax, [Color]
+	mov ah, al
+	cld
+	mov cx, 0xA000
+	mov es, cx
+	xor di, di
+	mov cx, 0d32000
+	rep stosw
+	ret
+
+setVGA:
+	mov ax,0x13	; 320x200x256
+	int 0x10
+	ret
+
+drawPixel:
+	mov cx, 0xA000
+	mov es, cx
+	mov ax, 0d320
+	mul word [Y]
+	add ax, [X]
+	mov bx, ax
+	mov al, [Color]
+	mov [es:bx], al
+	ret
+
+drawHorizontalLine:
+	mov cx, 0xA000
+	mov es, cx
+	mov ax, 0d320
+	mul word [Y]
+	add ax, [X]
+	mov di, ax
+	mov al, [Color]
+	mov cx, [Length]
+	cld
+	rep stosb
+	ret
+
+drawVerticalLine:
+	mov cx, 0xA000
+	mov es, cx
+	mov ax, 0d320
+	mul word [Y]
+	add ax, [X]
+	mov di, ax
+	mov al, [Color]
+	mov cx, [Length]
+	.loop:
+		mov [es:di], al
+		add di, 320
+		loop .loop
+	ret
