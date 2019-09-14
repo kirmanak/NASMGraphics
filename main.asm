@@ -1,7 +1,7 @@
 section .text
 
 ;---initializing graphics mode
-mov ax, 0dh
+mov ax, 012h
 int 10h
 
 ;---drawing red dot in the left upper corner of the screen
