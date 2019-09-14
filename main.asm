@@ -35,10 +35,10 @@ mov al, 0FFH		; any value with set seventh bit
 mov [es:bx], al		; showing the dot
 
 ;---waiting for key pressing
-xor	ax, ax
-int	16h
+xor ax, ax
+int 16h
 
 ;---returning to the previous mode
-mov	ax, 4c00h
-int	21h
+mov ax, 4c00h
+int 21h
 
