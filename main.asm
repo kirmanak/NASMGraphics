@@ -4,6 +4,15 @@ section .text
 
 call	setVGA
 
+call	performSecondTask	; second task
+call	waitKey
+
+mov	byte [Color],	0x4
+mov	word [X],	0d203
+mov	word [Y],	0d101
+call	drawPixel		; third task
+call	waitKey
+
 mov	byte [Color],	0x1
 call	backGroundColor
 
@@ -89,17 +98,41 @@ setText:
 backGroundColor:
 	push	ax
 	push	cx
+	push	di
 
 	call	setES
 	xor	ax,	ax	; start offset is zero
-	mov	di,	ax	; setting start offset
+	xor	di,	di	; setting start offset
 	mov	al,	[Color]	; 320 * 200 = 64000 but we
 	mov	ah,	[Color]	; can use al and ah to set
 	mov	cx,	0d32000	; colors for different pixels
 	rep	stosw
 
+	pop	di
 	pop	cx
 	pop 	ax
+	ret
+
+; puts zeroes to all cells in videomemory
+; and then writes 0xC9 to 0x20A2
+performSecondTask:
+	push	ax
+	push	cx
+	push	di
+
+	call	setES
+	xor	ax,	ax	; put zero color
+	xor	di,	di	; at zero offset
+	mov	cx,	0d32000
+	rep	stosw		; zeroing word by word
+
+	mov	ax,	0xC9
+	mov	di,	0x20A2
+	stosw
+
+	pop	di
+	pop	cx
+	pop	ax
 	ret
 
 ; sets current mode to VGA 320x200x256
