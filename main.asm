@@ -4,14 +4,14 @@ section .text
 
 call	setVGA
 
-call	performSecondTask	; second task
-call	waitKey
+;call	performSecondTask	; second task
+;call	waitKey
 
-mov	byte [Color],	0x4
-mov	word [X],	0d203
-mov	word [Y],	0d101
-call	drawPixel		; third task
-call	waitKey
+;mov	byte [Color],	0x4
+;mov	word [X],	0d203
+;mov	word [Y],	0d101
+;call	drawPixel		; third task
+;call	waitKey
 
 mov	byte [Color],	0x1
 call	backGroundColor
@@ -64,6 +64,13 @@ mov	word [X2],	0d160
 mov	word [Y],	0d80
 mov	word [Y2],	0d120
 call	drawLine
+call	waitKey
+
+mov word[X], 0d105
+mov word[Y], 0d55
+mov word[Color], 0x2
+mov word[Color2], 0x4
+call fill
 
 call	waitKey
 call	setText
@@ -141,7 +148,7 @@ setVGA:
 
 	mov	ax,	0x13	; 320x200x256
 	int	0x10
-	
+
 	pop	ax
 	ret
 
@@ -153,7 +160,7 @@ drawPixel:
 	call	calcStartOffset
 	mov	al,	[Color]
 	stosb
-	
+
 	pop	ax
 	ret
 
@@ -189,9 +196,14 @@ drawHorizontalLine:
 
 	call	setES
 	call	calcStartOffset
+	xor	dx,	dx
+	mov	ax,	[Length]
+	mov	cx,	2
+	div	cx
+	mov	cx,	ax
 	mov	al,	[Color]
-	mov	cx,	[Length]
-	rep	stosb
+	mov	ah,	[Color]
+	rep	stosw
 
 	pop	ax
 	pop	cx
@@ -219,6 +231,7 @@ drawVerticalLine:
 drawLine:
 	push	cx
 	push	ax
+	push	bx
 
 	call	setES
 	call	calcStartOffset
@@ -252,9 +265,69 @@ drawLine:
 		loop	.loop
 
 	.exit:
+		pop	bx
 		pop	ax
 		pop	cx
 		ret
+
+; gets color of pixel at ([X],[Y])
+getColor:
+    call	setES
+    call	calcStartOffset
+
+	xor	ax,	ax				; clearing registers before comparing
+
+    mov	ax, [es:di]    		; reading current pixel color
+
+	ret
+
+
+; fills out everything it can access
+fill:
+    push	ax
+    push	dx
+    push	cx
+
+	xor	dx,	dx				; clearing before comparison
+	call	getColor		; ax contains current pixel color
+    mov	dx, [Color2]        ; reading boundary color
+    cmp	ax, dx              ; comparing current color to boundary color
+    je	.exit				; exiting if they equal
+
+    call	drawPixel		; drawing the pixel
+
+    mov	dx,	[X]				; original argument
+    mov	cx,	[Y]				; original argument
+
+    mov	ax,	dx
+    add	ax,	0d1
+    mov	[X],	ax
+    call fill
+    mov	[X],	dx
+
+    mov	ax,	cx
+	add	ax,	0d1
+    mov	[Y],	ax
+    call fill
+    mov	[Y],	cx
+
+    mov	ax,	dx
+	sub	ax,	0d1
+    mov	[X],	ax
+    call fill
+    mov	[X],	dx
+
+    mov	ax,	cx
+	sub	ax,	0d1
+    mov	[Y],	ax
+    call fill
+    mov	[Y],	cx
+
+    .exit:
+        pop cx
+        pop dx
+        pop ax
+        ret
 
 section .bss
 
@@ -264,3 +337,19 @@ section .bss
 	Y2:	resw	1
 	Color:	resb	1
 	Length:	resw	1
+	Color2:	resb	1
+
+;void boundaryFill4(int x, int y, int fill_color,int boundary_color)
+ ;{
+ ;    if(getpixel(x, y) != boundary_color &&
+ ;       getpixel(x, y) != fill_color)
+ ;    {
+ ;        putpixel(x, y, fill_color);
+ ;        boundaryFill4(x + 1, y, fill_color, boundary_color);
+ ;        boundaryFill4(x, y + 1, fill_color, boundary_color);
+ ;        boundaryFill4(x - 1, y, fill_color, boundary_color);
+ ;        boundaryFill4(x, y - 1, fill_color, boundary_color);
+ ;    }
+ ;}
+
+
