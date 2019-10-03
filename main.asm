@@ -66,10 +66,17 @@ mov	word [Y2],	0d120
 call	drawLine
 call	waitKey
 
-mov word[X], 0d105
-mov word[Y], 0d55
-mov word[Color], 0x2
-mov word[Color2], 0x4
+mov word[X],		0d105
+mov word[Y],		0d55
+mov byte[Color],	0x2
+mov byte[Color2],	0x4
+call fill
+call	waitKey
+
+mov word[X],		0d125
+mov word[Y],		0d105
+mov byte[Color],	0x2
+mov byte[Color2],	0x4
 call fill
 
 call	waitKey
@@ -277,7 +284,7 @@ getColor:
 
 	xor	ax,	ax				; clearing registers before comparing
 
-    mov	ax, [es:di]    		; reading current pixel color
+    mov	al, [es:di]    		; reading current pixel color
 
 	ret
 
@@ -290,38 +297,41 @@ fill:
 
 	xor	dx,	dx				; clearing before comparison
 	call	getColor		; ax contains current pixel color
-    mov	dx, [Color2]        ; reading boundary color
-    cmp	ax, dx              ; comparing current color to boundary color
+    mov	dl, [Color2]        ; reading boundary color
+    cmp	al, dl              ; comparing current color to boundary color
     je	.exit				; exiting if they equal
+    mov dl, [Color]
+    cmp al, dl
+    je  .exit
 
     call	drawPixel		; drawing the pixel
 
-    mov	dx,	[X]				; original argument
-    mov	cx,	[Y]				; original argument
+    mov dx, [X]
+    mov cx, [Y]
 
     mov	ax,	dx
-    add	ax,	0d1
-    mov	[X],	ax
+	inc ax
+    mov	[X],    ax
     call fill
-    mov	[X],	dx
+    mov [X],    dx
 
     mov	ax,	cx
-	add	ax,	0d1
-    mov	[Y],	ax
+	inc ax
+    mov	[Y],    ax
     call fill
-    mov	[Y],	cx
+    mov [Y],    cx
 
     mov	ax,	dx
-	sub	ax,	0d1
-    mov	[X],	ax
+	dec ax
+    mov	[X],    ax
     call fill
-    mov	[X],	dx
+    mov [X],    dx
 
     mov	ax,	cx
-	sub	ax,	0d1
-    mov	[Y],	ax
+	dec ax
+    mov	[Y],    ax
     call fill
-    mov	[Y],	cx
+    mov [Y],    cx
 
     .exit:
         pop cx
